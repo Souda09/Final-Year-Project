@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { supabase } from './lib/supabase'
+import JudgeScorePage from './pages/JudgeScorePage'
 import useStore from './store/useStore'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
@@ -59,6 +60,7 @@ function App() {
       <div className="min-h-screen bg-background">
         <Navbar toggleTheme={toggleTheme} theme={theme} />
         <Routes>
+          <Route path="/judge-score/:token" element={<JudgeScorePage />} />
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/tournaments" element={<Tournaments />} />
@@ -71,6 +73,9 @@ function App() {
           <Route path="/referee-dashboard" element={user ? <RefereeDashboard /> : <Navigate to="/login" />} />
           <Route path="/jury-dashboard" element={user ? <JuryDashboard /> : <Navigate to="/login" />} />
         </Routes>
+
+
+        
         <Toaster 
           position="top-right"
           toastOptions={{
