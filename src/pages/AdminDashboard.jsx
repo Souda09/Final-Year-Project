@@ -340,15 +340,15 @@ const AdminDashboard = () => {
     setSelectedJudgeIds(updated)
   }
   const updateRoundScore = (round, judgeIdx, field, value) => {
-    let v = parseInt(value) || 0
-    if (v < 0) v = 0
-    if (v > 10) v = 10
-    setRoundScores(prev => {
-      const updated = { ...prev }
-      updated[round] = updated[round].map((s, i) => i === judgeIdx ? { ...s, [field]: v } : s)
-      return updated
-    })
-  }
+  let v = parseInt(value) || 0
+  if (v < 0) v = 0
+  // ✅ koi upper limit nahi — 10 se zyada bhi allowed
+  setRoundScores(prev => {
+    const updated = { ...prev }
+    updated[round] = updated[round].map((s, i) => i === judgeIdx ? { ...s, [field]: v } : s)
+    return updated
+  })
+}
   const calcRoundTotal = (round) => {
     const scores = roundScores[round]
     return {
@@ -849,6 +849,93 @@ const AdminDashboard = () => {
   }
 
   // ============ DAY OFFICIALS ============
+  // ============ JUDGE LINK GENERATION ============
+  const generateAndSendJudgeLink = async (match, judgeOfficial) => {
+    try {
+      // Check if link already exists
+      let { data: existing } = await supabase
+        .from('judge_links')
+        .select('*')
+        .eq('match_id', match.id)
+        .eq('judge_id', judgeOfficial.id)
+        .maybeSingle()
+
+      let linkToken = existing?.token
+
+      if (!linkToken) {
+        // Generate new token
+        linkToken = crypto.randomUUID() + '-' + Date.now().toString(36)
+        const { error } = await supabase.from('judge_links').insert([{
+          match_id: match.id,
+          judge_id: judgeOfficial.id,
+          token: linkToken,
+        }])
+        if (error) throw error
+      }
+
+      const judgeLink = `${window.location.origin}/judge-score/${linkToken}`
+
+      // Build WhatsApp message
+      const message = 
+`🥊 *PunchTrack - Judge Scoring Link*
+
+*Judge:* ${judgeOfficial.full_name}
+*Match:* ${match.player1?.full_name} vs ${match.player2?.full_name}
+*Weight:* ${match.weight_class || '—'} KG
+*Date:* ${match.match_date ? new Date(match.match_date).toLocaleDateString('en-GB') : '—'}
+
+*Your scoring link:*
+${judgeLink}
+
+⚠️ Do not share this link. Apna score hi dekh sakte hain.`
+
+      // Get phone number from official
+      const phone = judgeOfficial.contact_number?.replace(/[^0-9]/g, '') || ''
+      
+      if (phone) {
+        const waNumber = phone.startsWith('92') ? phone : (phone.startsWith('0') ? '92' + phone.slice(1) : '92' + phone)
+        const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`
+        window.open(waUrl, '_blank')
+        toast.success('✅ Link generated! WhatsApp opened.')
+      } else {
+        // No phone — copy link
+        await navigator.clipboard.writeText(judgeLink)
+        toast.success('✅ Link copied! Share it manually.')
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error('Error: ' + e.message)
+    }
+  }
+
+  const copyJudgeLink = async (match, judgeOfficial) => {
+    try {
+      let { data: existing } = await supabase
+        .from('judge_links')
+        .select('*')
+        .eq('match_id', match.id)
+        .eq('judge_id', judgeOfficial.id)
+        .maybeSingle()
+
+      let linkToken = existing?.token
+
+      if (!linkToken) {
+        linkToken = crypto.randomUUID() + '-' + Date.now().toString(36)
+        await supabase.from('judge_links').insert([{
+          match_id: match.id,
+          judge_id: judgeOfficial.id,
+          token: linkToken,
+        }])
+      }
+
+      const judgeLink = `${window.location.origin}/judge-score/${linkToken}`
+      await navigator.clipboard.writeText(judgeLink)
+      toast.success('✅ Link copied to clipboard!')
+    } catch (e) {
+      toast.error('Error: ' + e.message)
+    }
+  }
+
   const handleSaveDayOfficials = async () => {
     if (!dailyDate) { toast.error('Select a date'); return }
     if (!dailyTournamentId) { toast.error('Select a tournament'); return }
@@ -1334,6 +1421,44 @@ const AdminDashboard = () => {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Judge-wise score breakdown for this round */}
+                <div className={`mt-3 p-3 rounded-lg border ${theme === 'dark' ? 'bg-gray-900/50 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  <p className={`text-xs font-bold mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                    👥 JUDGE-WISE BREAKDOWN — ROUND {round}
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className={theme === 'dark' ? 'border-b border-gray-700' : 'border-b border-gray-300'}>
+                          <th className={`text-left py-1 px-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Judge</th>
+                          <th className="text-center py-1 px-2 text-red-500">RED</th>
+                          <th className="text-center py-1 px-2 text-blue-500">BLUE</th>
+                          <th className="text-center py-1 px-2">Winner</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {roundScores[round].map((s, idx) => {
+                          const judgeName = judgeOptions.find(j => j.id === selectedJudgeIds[idx])?.full_name || '—'
+                          const r = s.red || 0
+                          const bl = s.blue || 0
+                          const w = r > bl ? '🔴 RED' : bl > r ? '🔵 BLUE' : '⚖️ Draw'
+                          return (
+                            <tr key={idx} className={theme === 'dark' ? 'border-b border-gray-800' : 'border-b border-gray-100'}>
+                              <td className={`py-1 px-2 font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                                J-{idx + 1}: {judgeName}
+                              </td>
+                              <td className="py-1 px-2 text-center text-red-500 font-bold">{r}</td>
+                              <td className="py-1 px-2 text-center text-blue-500 font-bold">{bl}</td>
+                              <td className="py-1 px-2 text-center">{w}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
                 <div className="flex flex-wrap gap-2 mt-3 items-center">
                   <button onClick={() => saveRoundScores(round)} disabled={!isOpen || scoresSaving}
                     className={`px-4 py-2 rounded-lg font-bold text-white ${(!isOpen || scoresSaving) ? 'bg-gray-500 cursor-not-allowed' : 'bg-[#e11d48] hover:bg-[#c01739]'}`}>
@@ -1542,14 +1667,15 @@ const AdminDashboard = () => {
           <table className="w-full min-w-[1100px]">
             <thead>
               <tr className={theme === 'dark' ? 'border-b border-gray-800' : 'border-b border-gray-200'}>
-                {['Bout', 'Date', 'Tournament', 'Fighters', 'Referee', 'J-1', 'J-2', 'J-3', 'J-4', 'J-5', 'Supervisor', 'Actions'].map((h, i) => (
-                  <th key={i} className={`text-left py-3 px-2 text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{h}</th>
-                ))}
+                {['Bout', 'Date', 'Tournament', 'Fighters', 'Referee', 'J-1', 'J-2', 'J-3', 'J-4', 'J-5', 'Supervisor', 'Judge Links', 'Actions'].map((h, i) => (
+  <th key={i} className={`text-left py-3 px-2 text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{h}</th>
+))}
               </tr>
             </thead>
             <tbody>
               {boutOfficials.map((b, i) => (
                 <tr key={b.id} className={theme === 'dark' ? 'border-b border-gray-800 hover:bg-gray-800/50' : 'border-b border-gray-200 hover:bg-gray-50'}>
+                  
                   <td className={`py-3 px-2 font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>#{i + 1}</td>
                   <td className={`py-3 px-2 text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{b.match?.match_date ? new Date(b.match.match_date).toLocaleDateString('en-GB') : '—'}</td>
                   <td className={`py-3 px-2 text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{b.match?.tournament?.title || '—'}</td>
@@ -1564,7 +1690,23 @@ const AdminDashboard = () => {
                   <td className="py-3 px-2 text-xs text-blue-500">{gn(b.j4)}</td>
                   <td className="py-3 px-2 text-xs text-blue-500">{gn(b.j5)}</td>
                   <td className={`py-3 px-2 text-xs ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>{gn(b.supervisor)}</td>
+                 
+                                   <td className="py-3 px-2">
+                    <div className="flex flex-col gap-1">
+                      {[b.referee, b.j1, b.j2, b.j3, b.j4, b.j5].filter(Boolean).map((j, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => generateAndSendJudgeLink(b.match, j)}
+                          className="text-[10px] px-2 py-1 bg-green-500/20 text-green-600 rounded hover:bg-green-500/30 whitespace-nowrap"
+                          title="Send scoring link via WhatsApp"
+                        >
+                          📱 {j.full_name?.split(' ')[0] || `J-${idx}`}
+                        </button>
+                      ))}
+                    </div>
+                  </td>
                   <td className="py-3 px-2">
+
                     <div className="flex gap-1">
                       <button onClick={() => handleEditBoutOfficial(b)} className="p-2 bg-blue-500/20 text-blue-500 rounded-lg"><FaEdit /></button>
                       <button onClick={() => handleDeleteBoutOfficial(b.id)} className="p-2 bg-red-500/20 text-red-500 rounded-lg"><FaTrash /></button>
