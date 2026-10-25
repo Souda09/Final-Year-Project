@@ -698,10 +698,13 @@ const AdminDashboard = () => {
     setErrors(e)
     return Object.keys(e).length === 0
   }
-  const handlePlayerSubmit = async (e) => {
+    const handlePlayerSubmit = async (e) => {
     e.preventDefault(); setLoading(true)
     if (!validatePlayerForm()) { setLoading(false); toast.error('Fix errors'); return }
     try {
+      // ⬇️ ADMIN SESSION SAVE — signUp se pehle
+      const { data: { session: adminSession } } = await supabase.auth.getSession()
+
       const { count } = await supabase.from('players').select('*', { count: 'exact', head: true }).eq('cnic', playerForm.cnic)
       if (count && count > 0) { toast.error('CNIC exists!'); setLoading(false); return }
       let photoUrl = null
@@ -735,6 +738,15 @@ const AdminDashboard = () => {
       const { error: perr } = await supabase.from('players').insert([pd])
       if (perr) { toast.error('DB: ' + perr.message); setLoading(false); return }
       await supabase.from('profiles').update({ status: 'approved' }).eq('id', authData.user.id)
+
+      // ⬇️ ADMIN SESSION RESTORE — signUp ne replace kar diya tha
+      if (adminSession) {
+        await supabase.auth.setSession({
+          access_token: adminSession.access_token,
+          refresh_token: adminSession.refresh_token,
+        })
+      }
+
       toast.success('✅ Player registered!')
       resetPlayerForm(); fetchPlayers(); fetchUsers()
     } catch (e) { toast.error(e.message || 'Error') } finally { setLoading(false) }
