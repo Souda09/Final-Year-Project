@@ -233,12 +233,14 @@ toast.error('Unable to load data. Please try again.')
 <p className="text-muted-foreground mb-6">
   Your player registration is not complete. Please contact the administrator to complete your registration.
 </p>
-          <button
-            onClick={handleLogout}
-            className="px-6 py-2 bg-[#e11d48] text-white rounded-lg font-display font-bold"
-          >
-            Logout
-          </button>
+          
+<button
+  onClick={handleLogout}
+  className="px-4 py-2 rounded-lg bg-[#e11d48] text-white hover:bg-[#e11d48]/90 transition-colors flex items-center gap-2 text-sm font-bold"
+>
+  <FaSignOutAlt /> Logout
+</button>
+
         </div>
       </div>
     )
@@ -253,12 +255,14 @@ toast.error('Unable to load data. Please try again.')
           <h1 className={`font-display text-2xl sm:text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
             My Dashboard
           </h1>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 glass rounded-lg flex items-center gap-2 text-sm font-bold"
-          >
-            <FaSignOutAlt /> Logout
-          </button>
+          
+<button
+  onClick={handleLogout}
+  className="px-4 py-2 rounded-lg bg-[#e11d48] text-white hover:bg-[#e11d48]/90 transition-colors flex items-center gap-2 text-sm font-bold"
+>
+  <FaSignOutAlt /> Logout
+</button>
+
         </div>
 
         {/* Profile Card */}

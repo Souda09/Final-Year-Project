@@ -259,9 +259,17 @@
 
 
 import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FaSun, FaMoon, FaUser, FaBell, FaBars, FaTimes } from 'react-icons/fa'
+import {
+  FaSun,
+  FaMoon,
+  FaUser,
+  FaBell,
+  FaBars,
+  FaTimes,
+  FaChevronDown
+} from 'react-icons/fa'
 import { supabase } from '../lib/supabase'
 import useStore from '../store/useStore'
 import toast from 'react-hot-toast'
@@ -273,6 +281,8 @@ const Navbar = ({ toggleTheme, theme }) => {
   const [showNotifications, setShowNotifications] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [localProfile, setLocalProfile] = useState(null)
+  const [showMatchesDropdown, setShowMatchesDropdown] = useState(false)
+  const location = useLocation()
 
   useEffect(() => {
     if (user && !userProfile) {
@@ -295,16 +305,23 @@ const Navbar = ({ toggleTheme, theme }) => {
     setMobileMenuOpen(false)
   }
 
-  const currentRole = userProfile?.role || localProfile?.role
-  const dashboardRoles = ['admin', 'player', 'judge', 'referee', 'jury']
-  const showDashboard = user && dashboardRoles.includes(currentRole)
+ 
+const currentRole = userProfile?.role || localProfile?.role
 
-  const navLinks = [
-    { to: '/', label: 'Home' },
-    { to: '/tournaments', label: 'Tournaments' },
-    { to: '/about', label: 'About' },
-    ...(showDashboard ? [{ to: '/dashboard', label: 'Dashboard' }] : []),
-  ]
+const dashboardRoles = ['admin', 'player']
+
+const showDashboard = user && dashboardRoles.includes(
+  currentRole?.toLowerCase()
+)
+
+  
+const navLinks = [
+  { to: '/', label: 'Home' },
+  { to: '/tournaments', label: 'Tournaments' },
+  { to: '/about', label: 'About' },
+  ...(showDashboard ? [{ to: '/dashboard', label: 'Dashboard' }] : []),
+]
+
 
   return (
     <nav className={`sticky top-0 z-50 transition-all duration-300 ${
@@ -325,21 +342,87 @@ const Navbar = ({ toggleTheme, theme }) => {
   </h1>
 </Link>
 
-          <div className="hidden md:flex items-center gap-6 lg:gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`transition-colors ${
-                  theme === 'dark'
-                    ? 'text-gray-200 hover:text-[#e11d48]'
-                    : 'text-gray-950 hover:text-[#e11d48]'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
+         
+<div className="hidden md:flex items-center gap-6 lg:gap-8">
+  {navLinks.map((link) => (
+    <Link
+      key={link.to}
+      to={link.to}
+      className={`transition-colors ${
+        theme === 'dark'
+          ? 'text-gray-200 hover:text-[#e11d48]'
+          : 'text-gray-950 hover:text-[#e11d48]'
+      }`}
+    >
+      {link.label}
+    </Link>
+  ))}
+
+  <div className="relative">
+    <button
+      onClick={() => setShowMatchesDropdown(!showMatchesDropdown)}
+      onBlur={() => {
+        setTimeout(() => setShowMatchesDropdown(false), 150)
+      }}
+      className={`flex items-center gap-2 transition-colors ${
+        theme === 'dark'
+          ? 'text-gray-200 hover:text-[#e11d48]'
+          : 'text-gray-950 hover:text-[#e11d48]'
+      }`}
+    >
+      Matches History
+      <FaChevronDown
+        className={`text-xs transition-transform ${
+          showMatchesDropdown ? 'rotate-180' : ''
+        }`}
+      />
+    </button>
+
+    {showMatchesDropdown && (
+      <div
+        className={`absolute top-full left-0 mt-3 w-48 rounded-lg shadow-xl border overflow-hidden ${
+          theme === 'dark'
+            ? 'bg-[#1f1f1f] border-[#262626]'
+            : 'bg-white border-gray-200'
+        }`}
+      >
+        {[
+  { label: 'Previous Matches', tab: 'history' },
+  { label: 'Upcoming Matches', tab: 'upcoming' },
+  { label: 'Live Now', tab: 'live' },
+].map((item) => (
+  <button
+    key={item.tab}
+    onClick={() => {
+      setShowMatchesDropdown(false)
+
+      if (location.pathname === '/') {
+        window.dispatchEvent(
+          new CustomEvent('home-match-tab', {
+            detail: item.tab,
+          })
+        )
+    } else {
+      navigate('/', {
+        state: { matchTab: item.tab },
+      })
+    }
+    }}
+    className={`block w-full text-left px-4 py-3 text-sm transition-colors ${
+      theme === 'dark'
+        ? 'text-gray-200 hover:bg-[#e11d48]/10 hover:text-[#e11d48]'
+        : 'text-gray-800 hover:bg-red-50 hover:text-[#e11d48]'
+    }`}
+  >
+    {item.label}
+      </button>
+))}
+          
+      </div>
+    )}
+  </div>
+</div>
+
 
           <div className="hidden md:flex items-center gap-4">
             <button
