@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   FaTrophy, FaUsers, FaMedal, FaChartLine,
@@ -161,6 +161,7 @@ Your feedback matters to us. If you have any questions, suggestions, or concerns
 // ============ FOOTER COMPONENT ============
 const Footer = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const year = new Date().getFullYear()
 
   return (
@@ -306,6 +307,38 @@ const Home = () => {
   const [slideIndex, setSlideIndex] = useState(0)
 
   const slideTimer = useRef(null)
+
+  useEffect(() => {
+  const handleMatchTab = (event) => {
+    const tab = event.detail
+
+    setActiveTab(tab)
+
+    if (user) {
+      fetchTabData(tab)
+    }
+  }
+
+  window.addEventListener('home-match-tab', handleMatchTab)
+
+  return () => {
+    window.removeEventListener('home-match-tab', handleMatchTab)
+  }
+}, [user])
+
+useEffect(() => {
+  const tab = location.state?.matchTab
+
+  if (tab && ['live', 'upcoming', 'history'].includes(tab)) {
+    setActiveTab(tab)
+
+    if (user) {
+      fetchTabData(tab)
+    }
+
+    navigate('/', { replace: true, state: null })
+  }
+}, [location.state, user])
 
   // Hero slider auto-rotate
   useEffect(() => {
@@ -616,7 +649,7 @@ const Home = () => {
             <span className="gradient-text">About PunchTrack</span>
           </h2>
 
-          <p className="text-sm sm:text-base text-gray-700">
+              <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-2xl mx-auto px-4">
             PunchTrack is a modern boxing tournament management platform built to connect
             fighters, officials, and fans. Track live bouts, review completed match history,
             and follow upcoming fixtures — all in one place.

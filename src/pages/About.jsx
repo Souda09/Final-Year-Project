@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import {
   FaShieldAlt, FaTrophy, FaUsers, FaAward, FaCalendarAlt,
   FaChartLine, FaStar, FaHeart, FaChevronLeft, FaChevronRight
@@ -26,8 +27,10 @@ const ABOUT_SLIDES = [
 ]
 
 const About = () => {
+  const navigate = useNavigate()
   const [slideIndex, setSlideIndex] = useState(0)
   const slideTimer = useRef(null)
+  
 
   // Auto-rotate slider
   useEffect(() => {
@@ -321,9 +324,22 @@ const About = () => {
               <button className="px-6 sm:px-8 py-2 sm:py-3 bg-[#e11d48] text-white rounded-lg font-display font-bold hover:scale-105 transition-transform text-sm sm:text-base">
                 Sign Up Now
               </button>
-              <button className="px-6 sm:px-8 py-2 sm:py-3 bg-white dark:bg-gray-800 text-gray-100 rounded-lg font-display font-bold hover:scale-105 transition-transform shadow-md text-sm sm:text-base">
-                Contact Us
-              </button>
+              
+<button
+  onClick={() => {
+    if (window.location.pathname === '/') {
+      document.getElementById('feedback')?.scrollIntoView({
+        behavior: 'smooth',
+      })
+    } else {
+      navigate('/#feedback')
+    }
+  }}
+  className="px-6 sm:px-8 py-2 sm:py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg font-display font-bold hover:scale-105 transition-transform shadow-md text-sm sm:text-base"
+>
+  Contact Us
+</button>
+
             </div>
           </motion.div>
         </div>
