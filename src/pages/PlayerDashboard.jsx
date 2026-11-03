@@ -1,10 +1,11 @@
+
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   FaUser, FaHistory, FaCalendarAlt, FaSignOutAlt,
   FaTrophy, FaMapMarkerAlt, FaFistRaised, FaCheckCircle, FaTimesCircle,
-  FaFileMedical, FaEye
+  FaFileMedical, FaEye, FaLock, FaKey
 } from 'react-icons/fa'
 import { supabase } from '../lib/supabase'
 import useStore from '../store/useStore'
@@ -19,6 +20,13 @@ const PlayerDashboard = () => {
   const [upcomingMatches, setUpcomingMatches] = useState([])
   const [historyMatches, setHistoryMatches] = useState([])
 
+  // Password change state
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
+
   useEffect(() => {
     if (!user) {
       navigate('/login')
@@ -30,7 +38,6 @@ const PlayerDashboard = () => {
   const fetchAll = async () => {
     setLoading(true)
     try {
-      // 1. Profile
       const { data: prof } = await supabase
         .from('profiles')
         .select('*')
@@ -38,7 +45,6 @@ const PlayerDashboard = () => {
         .single()
       setProfile(prof)
 
-      // 2. Player record (players table, user_id se linked)
       const { data: player, error: pErr } = await supabase
         .from('players')
         .select('*')
@@ -46,13 +52,12 @@ const PlayerDashboard = () => {
         .single()
 
       if (pErr || !player) {
-toast.error('Player record not found. Please contact the administrator.')
+        toast.error('Player record not found. Please contact the administrator.')
         setLoading(false)
         return
       }
       setPlayerRecord(player)
 
-      // 3. Upcoming matches (scheduled) jisme ye player hai
       const { data: upcoming } = await supabase
         .from('matches')
         .select(`
@@ -66,7 +71,6 @@ toast.error('Player record not found. Please contact the administrator.')
         .order('match_date', { ascending: true })
       setUpcomingMatches(upcoming || [])
 
-      // 4. History matches (completed)
       const { data: history } = await supabase
         .from('matches')
         .select(`
@@ -81,7 +85,7 @@ toast.error('Player record not found. Please contact the administrator.')
       setHistoryMatches(history || [])
     } catch (e) {
       console.error(e)
-toast.error('Unable to load data. Please try again.')
+      toast.error('Unable to load data. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -92,7 +96,62 @@ toast.error('Unable to load data. Please try again.')
     navigate('/')
   }
 
-  // Stats calculate karein history se
+  // Password change handler
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+
+    if (!currentPassword) {
+      toast.error('Please enter your current password.')
+      return
+    }
+    if (newPassword.length < 6) {
+      toast.error('The new password must contain at least 6 characters.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('The new password and confirmation password do not match.')
+      return
+    }
+    if (newPassword === currentPassword) {
+      toast.error('The new password must be different from the current password.')
+      return
+    }
+
+    setChangingPassword(true)
+    try {
+      // Step 1: Verify current password by re-signing in
+      const email = user.email
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email,
+        password: currentPassword,
+      })
+
+      if (signInErr) {
+        toast.error('The current password is incorrect.')
+        setChangingPassword(false)
+        return
+      }
+
+      // Step 2: Update password
+      const { error: updateErr } = await supabase.auth.updateUser({
+        password: newPassword,
+      })
+
+      if (updateErr) throw updateErr
+
+      toast.success('Password changed successfully!')
+      setShowPasswordModal(false)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (err) {
+      console.error(err)
+      toast.error('Unable to change password: ' + err.message)
+    } finally {
+      setChangingPassword(false)
+    }
+  }
+
   const stats = React.useMemo(() => {
     if (!playerRecord) return { total: 0, wins: 0, losses: 0, draws: 0 }
     let wins = 0, losses = 0, draws = 0
@@ -118,19 +177,18 @@ toast.error('Unable to load data. Please try again.')
         <div className="text-center max-w-md px-4">
           <FaFistRaised className="text-5xl text-[#e11d48] mx-auto mb-4" />
           <h2 className="font-display text-2xl font-bold mb-2">
-  Player Record Not Found
-</h2>
-<p className="text-muted-foreground mb-6">
-  Your player registration is not complete. Please contact the administrator to complete your registration.
-</p>
-          
-<button
-  onClick={handleLogout}
-  className="px-4 py-2 rounded-lg bg-[#e11d48] text-white hover:bg-[#e11d48]/90 transition-colors flex items-center gap-2 text-sm font-bold"
->
-  <FaSignOutAlt /> Logout
-</button>
+            Player Record Not Found
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Your player registration is incomplete. Please contact the administrator to complete your registration.
+          </p>
 
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 rounded-lg bg-[#e11d48] text-white hover:bg-[#e11d48]/90 transition-colors flex items-center gap-2 text-sm font-bold"
+          >
+            <FaSignOutAlt /> Logout
+          </button>
         </div>
       </div>
     )
@@ -145,14 +203,27 @@ toast.error('Unable to load data. Please try again.')
           <h1 className={`font-display text-2xl sm:text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
             My Dashboard
           </h1>
-          
-<button
-  onClick={handleLogout}
-  className="px-4 py-2 rounded-lg bg-[#e11d48] text-white hover:bg-[#e11d48]/90 transition-colors flex items-center gap-2 text-sm font-bold"
->
-  <FaSignOutAlt /> Logout
-</button>
 
+          <div className="flex gap-2 flex-wrap">
+            {/* Change Password button */}
+            <button
+              onClick={() => setShowPasswordModal(true)}
+              className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-bold ${
+                theme === 'dark'
+                  ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
+                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+              }`}
+            >
+              <FaKey /> Change Password
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 rounded-lg bg-[#e11d48] text-white hover:bg-[#e11d48]/90 transition-colors flex items-center gap-2 text-sm font-bold"
+            >
+              <FaSignOutAlt /> Logout
+            </button>
+          </div>
         </div>
 
         {/* Profile Card */}
@@ -163,16 +234,16 @@ toast.error('Unable to load data. Please try again.')
         >
           <div className="flex flex-col sm:flex-row items-center gap-5">
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-[#e11d48]/30 to-[#fbbf24]/30 flex items-center justify-center shrink-0 overflow-hidden border-2 border-[#e11d48]/30">
-  {playerRecord.photo_url ? (
-    <img
-      src={playerRecord.photo_url}
-      alt={playerRecord.full_name}
-      className="w-full h-full object-cover"
-    />
-  ) : (
-    <FaUser className="text-4xl text-[#e11d48]" />
-  )}
-</div>
+              {playerRecord.photo_url ? (
+                <img
+                  src={playerRecord.photo_url}
+                  alt={playerRecord.full_name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <FaUser className="text-4xl text-[#e11d48]" />
+              )}
+            </div>
             <div className="flex-1 text-center sm:text-left">
               <h2 className={`font-display text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 {playerRecord.full_name}
@@ -213,7 +284,6 @@ toast.error('Unable to load data. Please try again.')
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {/* Clearance Status */}
             <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-50'}`}>
               <p className="text-xs text-muted-foreground mb-1">Medical Clearance</p>
               <p className={`font-display font-bold capitalize ${
@@ -228,7 +298,6 @@ toast.error('Unable to load data. Please try again.')
               </p>
             </div>
 
-            {/* Checkup Date */}
             <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-50'}`}>
               <p className="text-xs text-muted-foreground mb-1">Checkup Date</p>
               <p className={`font-display font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
@@ -236,7 +305,6 @@ toast.error('Unable to load data. Please try again.')
               </p>
             </div>
 
-            {/* Doctor Name */}
             <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-50'}`}>
               <p className="text-xs text-muted-foreground mb-1">Doctor</p>
               <p className={`font-display font-bold truncate ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
@@ -244,7 +312,6 @@ toast.error('Unable to load data. Please try again.')
               </p>
             </div>
 
-            {/* Fit for Combat */}
             <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-50'}`}>
               <p className="text-xs text-muted-foreground mb-1">Fit for Combat</p>
               <p className={`font-display font-bold ${playerRecord.fit_for_combat ? 'text-green-500' : 'text-red-500'}`}>
@@ -252,7 +319,6 @@ toast.error('Unable to load data. Please try again.')
               </p>
             </div>
 
-            {/* CNIC */}
             <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-50'}`}>
               <p className="text-xs text-muted-foreground mb-1">CNIC</p>
               <p className={`font-display font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
@@ -260,7 +326,6 @@ toast.error('Unable to load data. Please try again.')
               </p>
             </div>
 
-            {/* Medical Certificate Link */}
             <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-gray-900/50' : 'bg-gray-50'}`}>
               <p className="text-xs text-muted-foreground mb-1">Medical Certificate</p>
               {playerRecord.medical_certificate_url ? (
@@ -287,7 +352,7 @@ toast.error('Unable to load data. Please try again.')
             </div>
           </div>
         </motion.div>
-                
+
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {[
@@ -321,7 +386,8 @@ toast.error('Unable to load data. Please try again.')
           </h2>
           {upcomingMatches.length === 0 ? (
             <div className="glass rounded-xl p-6 text-center text-muted-foreground text-sm">
-No upcoming matches available. Matches scheduled by the administrator will appear here.            </div>
+              No upcoming matches available. Matches scheduled by the administrator will appear here.
+            </div>
           ) : (
             upcomingMatches.map(m => {
               const isRed = m.player1_id === playerRecord.id
@@ -373,7 +439,8 @@ No upcoming matches available. Matches scheduled by the administrator will appea
           </h2>
           {historyMatches.length === 0 ? (
             <div className="glass rounded-xl p-6 text-center text-muted-foreground text-sm">
-No match history available. Your match records will appear here once you have competed in a match.            </div>
+              No match history available. Your match records will appear here once you have competed in a match.
+            </div>
           ) : (
             historyMatches.map(m => {
               const isRed = m.player1_id === playerRecord.id
@@ -425,6 +492,133 @@ No match history available. Your match records will appear here once you have co
         </motion.div>
 
       </div>
+
+      {/* CHANGE PASSWORD MODAL */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`rounded-xl p-6 max-w-md w-full ${theme === 'dark' ? 'bg-gray-900 border border-gray-700' : 'bg-white border border-gray-200'}`}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className={`font-display text-xl font-bold flex items-center gap-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                <FaKey className="text-[#e11d48]" /> Change Password
+              </h2>
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false)
+                  setCurrentPassword('')
+                  setNewPassword('')
+                  setConfirmPassword('')
+                }}
+                className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+Enter your current password to set a new one.
+            </p>
+
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Current Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Current password"
+                    required
+                    className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
+                      theme === 'dark'
+                        ? 'border-gray-600 bg-gray-800 text-white'
+                        : 'border-gray-300 bg-white'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                  New Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FaKey className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    required
+                    minLength={6}
+                    className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
+                      theme === 'dark'
+                        ? 'border-gray-600 bg-gray-800 text-white'
+                        : 'border-gray-300 bg-white'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Confirm New Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <FaKey className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Enter your new password again"
+                    required
+                    minLength={6}
+                    className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
+                      theme === 'dark'
+                        ? 'border-gray-600 bg-gray-800 text-white'
+                        : 'border-gray-300 bg-white'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={changingPassword}
+                  className={`flex-1 px-4 py-2 bg-[#e11d48] text-white rounded-lg font-display font-bold ${
+                    changingPassword ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#c01739]'
+                  }`}
+                >
+                  {changingPassword ? 'Updating...' : 'Update Password'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordModal(false)
+                    setCurrentPassword('')
+                    setNewPassword('')
+                    setConfirmPassword('')
+                  }}
+                  className={`px-4 py-2 rounded-lg font-display font-bold ${
+                    theme === 'dark'
+                      ? 'bg-gray-700 text-gray-300'
+                      : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

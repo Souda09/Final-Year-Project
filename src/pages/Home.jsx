@@ -60,11 +60,11 @@ const Feedback = () => {
 
       if (error) throw error
 
-      toast.success('✅ Shukriya! Aapka feedback mil gaya.')
+toast.success('✅ Thank you! Your feedback has been received.')
       setForm({ name: '', email: '', message: '' })
     } catch (err) {
       console.error(err)
-      toast.error('Feedback submit nahi ho saka: ' + err.message)
+toast.error('Failed to submit feedback: ' + err.message)
     } finally {
       setLoading(false)
     }
