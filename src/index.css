@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
 /* Custom theme variables */
 @theme {
   --color-background: hsl(0 0% 4%);
@@ -94,16 +95,16 @@
     }
   }
 }
-
 @layer base {
   * {
-    border-color: hsl(var(--color-border));
+    border-color: var(--color-border);
   }
-  
+
   body {
-    background-color: hsl(var(--color-background));
-    color: hsl(var(--color-foreground));
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     font-family: var(--font-body);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 

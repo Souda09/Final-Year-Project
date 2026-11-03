@@ -10,7 +10,8 @@ import {
   FaFilePdf, FaTrophy, FaBoxes, FaSave, FaUndo, FaPlus,
   FaUserFriends, FaEdit, FaTrash, FaSearch, FaFistRaised,
   FaClock, FaMedal, FaPlay, FaPause, FaStop, FaHourglassHalf,
-  FaFileDownload, FaHospital, FaCalendarCheck, FaTable, FaAward
+  FaFileDownload, FaHospital, FaCalendarCheck, FaTable, FaAward,
+  FaEnvelope
 } from 'react-icons/fa'
 import { GiWhistle } from 'react-icons/gi'
 import toast from 'react-hot-toast'
@@ -45,7 +46,8 @@ const loadImageAsBase64 = (url) => new Promise((resolve, reject) => {
 })
 
 const AdminDashboard = () => {
-  const { addNotification, theme } = useStore()
+const { addNotification, markNotificationRead } = useStore()
+const theme = useStore((state) => state.theme)
 
   // ============ STATE ============
   const [applications, setApplications] = useState([])
@@ -110,6 +112,13 @@ const AdminDashboard = () => {
   const [liveScore1, setLiveScore1] = useState(0)
   const [liveScore2, setLiveScore2] = useState(0)
 
+  // ============ FEEDBACK STATE ============
+const [feedbackList, setFeedbackList] = useState([])
+const [feedbackLoading, setFeedbackLoading] = useState(false)
+const [selectedFeedback, setSelectedFeedback] = useState(null)
+const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+const [feedbackFilter, setFeedbackFilter] = useState('all')
+
   // Judge scoring
   const [selectedJudgeIds, setSelectedJudgeIds] = useState(['', '', '', '', ''])
   const [roundScores, setRoundScores] = useState({
@@ -173,9 +182,71 @@ const AdminDashboard = () => {
   // ============ FETCH ============
   useEffect(() => {
     fetchApplications(); fetchUsers(); fetchPlayers(); fetchTournaments()
-    fetchMatches(); fetchMatchResults(); fetchOfficials(); fetchDayOfficials()
-    fetchBoutOfficials(); fetchMedals()
+  fetchMatches(); fetchMatchResults(); fetchOfficials(); fetchDayOfficials()
+  fetchBoutOfficials(); fetchMedals(); fetchFeedback()
   }, [])
+
+  // ============ REAL-TIME FEEDBACK NOTIFICATION ============
+
+
+useEffect(() => {
+  const channel = supabase
+    .channel('feedback-changes')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'feedback'
+      },
+      (payload) => {
+        const newFb = payload.new
+
+        const notification = {
+          id: String(newFb.id),
+          feedback_id: newFb.id,
+          message: `📧 New feedback from ${newFb?.name || 'User'}`,
+          type: 'feedback',
+          read: Boolean(newFb.is_read),
+          created_at: newFb.created_at || new Date().toISOString()
+        }
+
+        useStore.getState().addNotification(notification)
+
+        toast.success(
+          `📧 New feedback from ${newFb?.name || 'User'}`
+        )
+
+        fetchFeedback()
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'feedback'
+      },
+      (payload) => {
+        const updatedFb = payload.new
+
+        // Sync the notification's read status with Supabase
+        if (updatedFb.is_read) {
+          useStore.getState().markNotificationRead(String(updatedFb.id))
+        }
+
+        fetchFeedback()
+      }
+    )
+    .subscribe((status, err) => {
+      console.log('Feedback channel status:', status, err || '')
+    })
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [])
+
 
   useEffect(() => () => {
     if (timerRef.current) clearInterval(timerRef.current)
@@ -233,6 +304,25 @@ const AdminDashboard = () => {
       if (!error && data) setMedals(data)
     } catch (e) { console.error(e) }
   }
+
+  // ============ FETCH FEEDBACK ============
+const fetchFeedback = async () => {
+  setFeedbackLoading(true)
+  try {
+    const { data, error } = await supabase
+      .from('feedback')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    setFeedbackList(data || [])
+  } catch (e) {
+    console.error(e)
+    toast.error('Feedback load nahi hua: ' + e.message)
+  } finally {
+    setFeedbackLoading(false)
+  }
+}
+
   const fetchBoutOfficials = async () => {
     try {
       const { data, error } = await supabase.from('bout_officials').select(`
@@ -1810,8 +1900,7 @@ ${judgeLink}
               </h3>
               {standings.length === 0 ? (
                 <p className={`text-center py-6 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Koi medal assign nahi hua. Result add karein (Final match ka) to auto medals aayenge.
-                </p>
+No medals have been assigned yet. Add a final match result to automatically assign medals.                </p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[700px]">
@@ -2163,6 +2252,198 @@ ${judgeLink}
     </motion.div>
   )
 
+  // ============ RENDER FEEDBACK ============
+const renderFeedbackData = () => {
+  const filtered = feedbackList.filter(f => {
+    if (feedbackFilter === 'unread') return !f.is_read
+    if (feedbackFilter === 'read') return f.is_read
+    return true
+  })
+
+  const unreadCount = feedbackList.filter(f => !f.is_read).length
+
+
+const handleMarkRead = async (fb) => {
+  try {
+    const { error } = await supabase
+      .from('feedback')
+      .update({ is_read: !fb.is_read })
+      .eq('id', fb.id)
+
+    if (error) throw error
+
+    const store = useStore.getState()
+    const notificationId = String(fb.id)
+
+    if (!fb.is_read) {
+      store.markNotificationRead(notificationId)
+    } else {
+      // Allow marking a previously read notification as unread
+      store.setNotifications(
+        store.notifications.map((n) =>
+          String(n.id) === notificationId
+            ? { ...n, read: false }
+            : n
+        )
+      )
+    }
+
+    await fetchFeedback()
+
+    toast.success(fb.is_read ? 'Marked as unread' : 'Marked as read')
+  } catch (e) {
+    toast.error(e.message)
+  }
+}
+
+  const handleDeleteFeedback = async (id) => {
+    if (!window.confirm('Delete this feedback permanently?')) return
+    try {
+      const { error } = await supabase.from('feedback').delete().eq('id', id)
+      if (error) throw error
+      toast.success('Feedback deleted')
+      fetchFeedback()
+      setShowFeedbackModal(false)
+      setSelectedFeedback(null)
+    } catch (e) {
+      toast.error(e.message)
+    }
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+      <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+        <h2 className={`font-display text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+          Feedback & Contacts ({feedbackList.length})
+          {unreadCount > 0 && (
+            <span className="ml-2 px-2 py-0.5 bg-[#e11d48] text-white text-xs rounded-full">
+              {unreadCount} new
+            </span>
+          )}
+        </h2>
+
+        <div className="flex gap-2 flex-wrap">
+          {['all', 'unread', 'read'].map(f => (
+            <button
+              key={f}
+              onClick={() => setFeedbackFilter(f)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors ${
+                feedbackFilter === f
+                  ? 'bg-[#e11d48] text-white'
+                  : theme === 'dark'
+                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+          <button
+            onClick={fetchFeedback}
+            disabled={feedbackLoading}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+              theme === 'dark' ? 'bg-gray-800 text-gray-300' : 'bg-gray-200 text-gray-700'
+            }`}
+          >
+            {feedbackLoading ? '⏳' : '🔄'} Refresh
+          </button>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className={`text-center py-12 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+          <p className="text-5xl mb-3">📭</p>
+          <p>No feedback {feedbackFilter !== 'all' ? `(${feedbackFilter})` : ''} yet.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px]">
+            <thead>
+              <tr className={theme === 'dark' ? 'border-b border-gray-800' : 'border-b border-gray-200'}>
+                {['#', 'Name', 'Email', 'Message', 'Date', 'Status', 'Actions'].map((h, i) => (
+                  <th key={i} className={`text-left py-3 px-3 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((fb, i) => (
+                <tr
+                  key={fb.id}
+                  className={`${
+                    theme === 'dark' ? 'border-b border-gray-800 hover:bg-gray-800/50' : 'border-b border-gray-200 hover:bg-gray-50'
+                  } ${!fb.is_read ? (theme === 'dark' ? 'bg-[#e11d48]/5' : 'bg-red-50/40') : ''}`}
+                >
+                  <td className={`py-3 px-3 font-bold ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {i + 1}
+                    {!fb.is_read && <span className="ml-1 text-[#e11d48]">●</span>}
+                  </td>
+                  <td className={`py-3 px-3 font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                    {fb.name}
+                  </td>
+                  <td className={`py-3 px-3 text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <a href={`mailto:${fb.email}`} className="text-[#e11d48] hover:underline">
+                      {fb.email}
+                    </a>
+                  </td>
+                  <td className={`py-3 px-3 text-sm max-w-[300px] truncate ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {fb.message}
+                  </td>
+                  <td className={`py-3 px-3 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {fb.created_at ? new Date(fb.created_at).toLocaleString('en-GB', {
+                      day: '2-digit', month: 'short', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit'
+                    }) : '—'}
+                  </td>
+                  <td className="py-3 px-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                      fb.is_read
+                        ? 'bg-green-500/20 text-green-500'
+                        : 'bg-yellow-500/20 text-yellow-500'
+                    }`}>
+                      {fb.is_read ? 'Read' : 'New'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-3">
+                    <div className="flex gap-2">
+                      <button
+  type="button"
+  onClick={() => {
+    console.log('VIEW CLICKED:', fb)
+    setSelectedFeedback(fb)
+    setShowFeedbackModal(true)
+  }}
+  className="px-3 py-2 bg-blue-500/20 text-blue-500 rounded-lg text-xs font-bold"
+>
+  View
+</button>
+                      <button
+                        onClick={() => handleMarkRead(fb)}
+                        className={`p-2 rounded-lg ${fb.is_read ? 'bg-gray-500/20 text-gray-500' : 'bg-green-500/20 text-green-500'}`}
+                        title={fb.is_read ? 'Mark unread' : 'Mark read'}
+                      >
+                        <FaCheckCircle />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteFeedback(fb.id)}
+                        className="p-2 bg-red-500/20 text-red-500 rounded-lg"
+                        title="Delete"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
   // ============ RENDER OFFICIALS DATA ============
   const renderOfficialsData = () => (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
@@ -2467,6 +2748,7 @@ ${judgeLink}
             { id: 'daily-officials', label: 'Daily Officials', icon: FaCalendarCheck },
             { id: 'rj-assignments', label: 'R&J Assignments', icon: GiWhistle },
             { id: 'point-table', label: 'Point Table', icon: FaTable },
+            { id: 'feedback-data', label: 'Feedback', icon: FaEnvelope },
             { id: 'player-registration', label: 'Register Player', icon: FaUser },
             { id: 'tournament-management', label: 'Create Tournament', icon: FaPlus },
             { id: 'match-scheduling', label: 'Schedule Match', icon: FaCalendarAlt }
@@ -2572,6 +2854,7 @@ ${judgeLink}
             {activeTab === 'daily-officials' && renderDailyOfficials()}
             {activeTab === 'rj-assignments' && renderRJAssignments()}
             {activeTab === 'point-table' && renderPointTable()}
+            {activeTab === 'feedback-data' && renderFeedbackData()}
             {activeTab === 'player-registration' && renderPlayerForm()}
             {activeTab === 'tournament-management' && renderTournamentForm()}
             {activeTab === 'match-scheduling' && renderMatchForm()}
@@ -2636,6 +2919,91 @@ ${judgeLink}
 
       {/* MATCH DETAIL MODAL */}
       {renderMatchDetailModal()}
+      {/* FEEDBACK DETAIL MODAL */}
+{showFeedbackModal && selectedFeedback && (
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={`rounded-xl p-6 max-w-lg w-full ${
+        theme === 'dark'
+          ? 'bg-gray-900 border border-gray-700'
+          : 'bg-white border border-gray-200'
+      }`}
+    >
+      <div className="flex justify-between items-center mb-4">
+        <h2 className={`font-display text-xl font-bold ${
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        }`}>
+          Feedback Detail
+        </h2>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowFeedbackModal(false)
+            setSelectedFeedback(null)
+          }}
+          className="p-2 rounded-lg"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs font-bold text-gray-400">From</p>
+          <p className={theme === 'dark' ? 'text-white' : 'text-gray-900'}>
+            {selectedFeedback.name}
+          </p>
+          <a
+            href={`mailto:${selectedFeedback.email}`}
+            className="text-sm text-[#e11d48] hover:underline"
+          >
+            {selectedFeedback.email}
+          </a>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold text-gray-400">Date</p>
+          <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}>
+            {selectedFeedback.created_at
+              ? new Date(selectedFeedback.created_at).toLocaleString('en-GB')
+              : '—'}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold text-gray-400">Message</p>
+          <p className={`whitespace-pre-wrap p-3 rounded-lg ${
+            theme === 'dark'
+              ? 'bg-gray-800 text-gray-200'
+              : 'bg-gray-100 text-gray-800'
+          }`}>
+            {selectedFeedback.message}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex gap-3 mt-6">
+        <a
+          href={`mailto:${selectedFeedback.email}?subject=Re: Your feedback on PunchTrack`}
+          className="flex-1 px-4 py-2 bg-[#e11d48] text-white rounded-lg text-center font-bold"
+        >
+          Reply via Email
+        </a>
+
+        <button
+          type="button"
+          onClick={() => handleDeleteFeedback(selectedFeedback.id)}
+          className="px-4 py-2 bg-red-500/20 text-red-500 rounded-lg"
+        >
+          Delete
+        </button>
+      </div>
+    </motion.div>
+  </div>
+)}
 
       {/* BOUT OFFICIALS MODAL */}
       {showBoutOfficialModal && (
@@ -2698,8 +3066,6 @@ ${judgeLink}
           </motion.div>
         </div>
       )}
-
-      {/* EDIT PLAYER MODAL */}
 
       {/* EDIT USER MODAL */}
       {showUserEditModal && editingUser && (
@@ -2832,6 +3198,8 @@ ${judgeLink}
           </motion.div>
         </div>
       )}
+        
+        
 
       {/* EDIT TOURNAMENT MODAL */}
       {showTournamentModal && (
@@ -3088,7 +3456,7 @@ ${judgeLink}
                   className={`px-6 py-2 rounded-lg font-display font-bold ${theme === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}`}>Cancel</button>
               </div>
             </form>
-          </motion.div>
+                      </motion.div>
         </div>
       )}
     </div>
