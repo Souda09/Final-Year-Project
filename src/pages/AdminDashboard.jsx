@@ -2919,7 +2919,7 @@ const handleMarkRead = async (fb) => {
 
       {/* MATCH DETAIL MODAL */}
       {renderMatchDetailModal()}
-      {/* FEEDBACK DETAIL MODAL */}
+{/* FEEDBACK DETAIL MODAL */}
 {showFeedbackModal && selectedFeedback && (
   <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4">
     <motion.div
@@ -2985,26 +2985,17 @@ const handleMarkRead = async (fb) => {
         </div>
       </div>
 
-      <div className="flex gap-3 mt-6">
+      <div className="mt-6">
         <a
           href={`mailto:${selectedFeedback.email}?subject=Re: Your feedback on PunchTrack`}
-          className="flex-1 px-4 py-2 bg-[#e11d48] text-white rounded-lg text-center font-bold"
+          className="w-full block px-4 py-2 bg-[#e11d48] text-white rounded-lg text-center font-bold"
         >
           Reply via Email
         </a>
-
-        <button
-          type="button"
-          onClick={() => handleDeleteFeedback(selectedFeedback.id)}
-          className="px-4 py-2 bg-red-500/20 text-red-500 rounded-lg"
-        >
-          Delete
-        </button>
       </div>
     </motion.div>
   </div>
 )}
-
       {/* BOUT OFFICIALS MODAL */}
       {showBoutOfficialModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
