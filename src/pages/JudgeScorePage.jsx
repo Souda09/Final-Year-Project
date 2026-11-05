@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -29,11 +30,16 @@ const JudgeScorePage = () => {
 
   const loadLink = async () => {
     try {
+      // 1. Find link by token
       const { data: link, error: lErr } = await supabase
         .from('judge_links').select('*').eq('token', token).single()
+
+      console.log('🔗 LINK QUERY →', { link, lErr })
+
       if (lErr || !link) { setError('Invalid or expired link.'); setLoading(false); return }
       setLinkData(link)
 
+      // 2. Load match
       const { data: match, error: mErr } = await supabase
         .from('matches')
         .select(`*, tournament:tournaments(title, age_category, venue),
@@ -43,10 +49,22 @@ const JudgeScorePage = () => {
       if (mErr) throw mErr
       setMatchData(match)
 
-      const { data: judge } = await supabase
-        .from('officials').select('full_name, unit, post').eq('id', link.judge_id).single()
-      if (judge) setJudgeData(judge)
+      // 3. Load judge — YEH HAI WO CODE
+      const { data: judge, error: jErr } = await supabase
+        .from('officials')
+        .select('full_name, unit, post')
+        .eq('id', link.judge_id)
+        .single()
 
+      console.log('👨‍⚖️ JUDGE QUERY →', {
+        link_judge_id: link.judge_id,
+        judge,
+        jErr
+      })
+
+      if (!jErr && judge) setJudgeData(judge)
+
+      // 4. Load existing scores by this judge for this match
       const { data: existing } = await supabase
         .from('match_judge_scores').select('*')
         .eq('match_id', link.match_id).eq('judge_id', link.judge_id)
@@ -61,7 +79,8 @@ const JudgeScorePage = () => {
         setScores(newScores); setSavedRounds(newSaved)
       }
     } catch (e) {
-      console.error(e); setError('Error loading.')
+      console.error('❌ LOAD ERROR →', e)
+      setError('Error loading.')
     } finally { setLoading(false) }
   }
 
@@ -129,7 +148,7 @@ const JudgeScorePage = () => {
           </p>
         </div>
 
-        {/* MATCH INFO — RED / BLUE buttons with player names + colors */}
+        {/* MATCH INFO — RED / BLUE */}
         <div className={`rounded-2xl p-5 mb-6 ${theme === 'dark' ? 'bg-gray-800/50 border border-gray-700' : 'bg-white border border-gray-200'}`}>
           <div className="grid grid-cols-2 gap-3">
             <div className="p-4 rounded-xl bg-red-600 text-white text-center shadow-lg">
@@ -236,6 +255,5 @@ const JudgeScorePage = () => {
     </div>
   )
 }
-
 
 export default JudgeScorePage
