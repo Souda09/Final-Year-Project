@@ -67,8 +67,7 @@ function App() {
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
           <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/dashboard" />} />
           <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
-          <Route path="/admin-dashboard" element={user ? <AdminDashboard /> : <Navigate to="/login" />} />
-          <Route path="/player-dashboard" element={user ? <PlayerDashboard /> : <Navigate to="/login" />} />
+<Route path="/admin-dashboard" element={user ? <AdminDashboard key={theme} /> : <Navigate to="/login" />} />          <Route path="/player-dashboard" element={user ? <PlayerDashboard /> : <Navigate to="/login" />} />
           <Route path="/judge-dashboard" element={user ? <JudgeDashboard /> : <Navigate to="/login" />} />
           <Route path="/referee-dashboard" element={user ? <RefereeDashboard /> : <Navigate to="/login" />} />
           <Route path="/jury-dashboard" element={user ? <JuryDashboard /> : <Navigate to="/login" />} />
