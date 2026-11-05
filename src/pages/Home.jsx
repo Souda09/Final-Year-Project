@@ -13,6 +13,7 @@ import useStore from '../store/useStore'
 import toast from 'react-hot-toast'
 import logo from '/logo3.png'
 import logo2 from '/logo2.png'
+import LiveVideo from '../components/LiveVideo'
 
 // ============ HERO SLIDER DATA ============
 const HERO_SLIDES = [
@@ -340,6 +341,14 @@ useEffect(() => {
   }
 }, [location.state, user])
 
+  useEffect(() => {
+    if (activeTab === 'live') {
+      setTimeout(() => {
+        document.getElementById('matches')?.scrollIntoView({ behavior: 'smooth' })
+      }, 150)
+    }
+  }, [activeTab])
+
   // Hero slider auto-rotate
   useEffect(() => {
     slideTimer.current = setInterval(() => {
@@ -658,7 +667,7 @@ useEffect(() => {
       </section>
 
       {/* MATCHES TABS */}
-      <section className="py-8 flex-1">
+      <section id="matches" className="py-8 flex-1">
         <div className="container-responsive max-w-3xl">
           <h2 className="font-display text-2xl sm:text-3xl font-bold text-center mb-6">
             <span className="gradient-text">Matches</span>
@@ -726,7 +735,15 @@ useEffect(() => {
                 </div>
               )}
 
-              {activeTab === 'live' && liveMatches.map(m => renderMatchCard(m))}
+              {/* {activeTab === 'live' && liveMatches.map(m => renderMatchCard(m))} */}
+
+
+{/* Video link */}
+{activeTab === 'live' && liveMatches.length > 0 && (
+  <LiveVideo match={liveMatches[0]} />
+)}
+
+{activeTab === 'live' && liveMatches.map(m => renderMatchCard(m))}
 
               {activeTab === 'upcoming' && !loading && upcomingMatches.length === 0 && (
                 <div className="glass rounded-xl p-8 text-center">
