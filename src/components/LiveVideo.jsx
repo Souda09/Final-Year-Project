@@ -5,7 +5,7 @@ import { FaPlay } from 'react-icons/fa'
 const YOUTUBE_CHANNEL_ID = ''
 
 // 👇 Testing ke liye boxing video (channel ID khali ho to ye chalegi)
-const TEST_VIDEO_ID = 'iAA5VXKG7zk'
+const TEST_VIDEO_ID = 'pUv6robq1Zw'
 
 const LiveVideo = ({ match }) => {
   const src = YOUTUBE_CHANNEL_ID
