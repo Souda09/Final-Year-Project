@@ -42,7 +42,7 @@ const Login = () => {
       >
         <div className="text-center mb-8">
           <h2 className="font-display text-3xl font-bold gradient-text mb-2">Welcome Back</h2>
-          <p className="text-muted-foreground">Login to your PunchTrack account</p>
+          <p className="text-muted-foreground">Login to your BOXaFIT account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

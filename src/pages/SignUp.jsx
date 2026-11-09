@@ -42,7 +42,7 @@ const SignUp = () => {
         className="glass rounded-2xl p-8 max-w-md w-full"
       >
         <div className="text-center mb-8">
-          <h2 className="font-display text-3xl font-bold gradient-text mb-2">Join PunchTrack</h2>
+          <h2 className="font-display text-3xl font-bold gradient-text mb-2">Join BOXaFIT</h2>
           <p className="text-muted-foreground">Create your account to get started</p>
         </div>
 
