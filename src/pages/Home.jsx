@@ -5,13 +5,13 @@ import {
   FaTrophy, FaUsers, FaMedal, FaChartLine,
   FaPlay, FaHistory, FaCalendarAlt, FaLock,
   FaMapMarkerAlt, FaFistRaised, FaEnvelope, FaPhone,
-  FaMapPin, FaFacebook, FaTwitter, FaInstagram, FaYoutube,
+  FaMapPin, FaFacebook, FaInstagram, FaYoutube, FaWhatsapp,
   FaChevronLeft, FaChevronRight, FaPaperPlane, FaClock
 } from 'react-icons/fa'
 import { supabase } from '../lib/supabase'
 import useStore from '../store/useStore'
 import toast from 'react-hot-toast'
-import logo from '/logo3.png'
+import logo from '/logo4.png'
 import logo2 from '/logo2.png'
 
 // ============ HERO SLIDER DATA ============
@@ -33,7 +33,7 @@ const HERO_SLIDES = [
   {
     title: 'Your Boxing Journey',
     subtitle: 'Manage tournaments, track fighters, and build your legacy.',
-    cta: 'Join PunchTrack',
+    cta: 'Join BOXaFIT',
     ctaAction: 'signup',
     bg: 'from-[#e11d48]/20 via-[#fbbf24]/10 to-[#e11d48]/30'
   }
@@ -172,10 +172,14 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <img src={logo2} alt="PunchTrack" className="w-auto h-28 object-contain" />
-              <h3 className="font-display text-xl font-bold text-gray-50">
-                PunchTrack
-              </h3>
+              <img src={logo2} alt="BOXaFIT" className="w-auto h-28 object-contain" />
+             <h3 className="font-display text-xl font-black tracking-wider uppercase italic">
+  <span className="gradient-text">BOX</span>
+  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-400">
+    a
+  </span>
+  <span className="gradient-text">FIT</span>
+</h3>
             </div>
 
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -184,22 +188,24 @@ const Footer = () => {
             </p>
 
             <div className="flex gap-3 mt-4">
-              {[
-                { icon: FaFacebook, href: '#' },
-                { icon: FaTwitter, href: '#' },
-                { icon: FaInstagram, href: '#' },
-                { icon: FaYoutube, href: '#' }
-              ].map((social, i) => (
-                <a
-                  key={i}
-                  href={social.href}
-                  className="w-9 h-9 rounded-full bg-gray-800 hover:bg-[#e11d48] flex items-center justify-center transition-colors"
-                  aria-label="social"
-                >
-                  <social.icon className="text-sm text-white" />
-                </a>
-              ))}
-            </div>
+  {[
+    { icon: FaFacebook, href: 'https://www.facebook.com/share/1BkkStiL5G/' },
+    { icon: FaInstagram, href: 'https://www.instagram.com/boxafit2026?dlrf=MTV1MmszcjN2NDg4Mg==' },
+    { icon: FaYoutube, href: 'https://youtube.com/@boxafit8934?si=139Tqg92oLtL4n0L' },
+{ icon: FaWhatsapp, href: 'https://wa.me/+92 341 2269283' }
+  ].map((social, i) => (
+    <a
+      key={i}
+      href={social.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="w-9 h-9 rounded-full bg-gray-800 hover:bg-[#e11d48] flex items-center justify-center transition-colors"
+      aria-label="social"
+    >
+      <social.icon className="text-sm text-white" />
+    </a>
+  ))}
+</div>
           </div>
 
           {/* Quick Links */}
@@ -245,10 +251,10 @@ const Footer = () => {
               <li className="flex items-center gap-3">
                 <FaPhone className="text-[#e11d48] shrink-0" />
                 <a
-                  href="tel:+922132744025"
+                  href="tel:+92 341 2269283"
                   className="text-muted-foreground hover:text-[#e11d48] transition-colors"
                 >
-                  021-112345678
+                  +92 341 2269283
                 </a>
               </li>
 
@@ -286,7 +292,7 @@ const Footer = () => {
 
         {/* Bottom bar */}
         <div className="mt-10 pt-6 border-t border-gray-300 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-muted-foreground">
-          <p>© {year} PunchTrack. All rights reserved.</p>
+          <p>© {year} BOXaFIT. All rights reserved.</p>
           <p>Made with ❤️ for the boxing community</p>
         </div>
       </div>
@@ -554,12 +560,11 @@ useEffect(() => {
               exit={{ opacity: 0, y: -30 }}
               transition={{ duration: 0.6 }}
             >
-              <img src={logo} alt="PunchTrack" className="w-auto sm:w-64 mx-auto mb-4" />
-
-              <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black mb-4">
-                <span className="gradient-text">PunchTrack</span>
-              </h1>
-
+<img
+  src={logo}
+  alt="BOXaFIT"
+  className="w-52 sm:w-64 md:w-72 lg:w-80 h-auto mx-auto mb-5 object-contain"
+/>
               <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold mb-3 text-foreground">
                 {currentSlide.title}
               </h2>
@@ -646,14 +651,19 @@ useEffect(() => {
       <section className="py-12">
         <div className="container-responsive max-w-3xl text-center">
           <h2 className="font-display text-2xl sm:text-3xl font-bold mb-3">
-            <span className="gradient-text">About PunchTrack</span>
-          </h2>
+  <span className="gradient-text">About </span>
+  <span className="gradient-text">BOX</span>
+  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-400">
+    a
+  </span>
+  <span className="gradient-text">FIT</span>
+</h2>
 
               <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-2xl mx-auto px-4">
-            PunchTrack is a modern boxing tournament management platform built to connect
-            fighters, officials, and fans. Track live bouts, review completed match history,
-            and follow upcoming fixtures — all in one place.
-          </p>
+  BOXaFIT is a modern boxing tournament management platform built to connect
+  fighters, officials, and fans. Track live bouts, review completed match history,
+  and follow upcoming fixtures — all in one place.
+</p>
         </div>
       </section>
 

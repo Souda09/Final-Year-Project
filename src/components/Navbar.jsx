@@ -174,12 +174,16 @@ const handleFeedbackClick = async (fb, markOnly = false) => {
           <Link to="/" onClick={closeMobile} className="flex items-center gap-1 group">
             <img
     src={logo}
-    alt="PunchTrack Logo"
+    alt="BOXaFIT Logo"
     className="w-auto h-14 md:h-16 object-contain group-hover:scale-110 transition-transform"
   />
-  <h1 className="font-display text-xl md:text-2xl font-bold gradient-text">
-    PunchTrack
-  </h1>
+  <h1 className="font-black text-xl md:text-2xl tracking-wider uppercase italic">
+  <span className="gradient-text">BOX</span>
+  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-400">
+    a
+  </span>
+  <span className="gradient-text">FIT</span>
+</h1>
           </Link>
 
           {/* Desktop Nav */}

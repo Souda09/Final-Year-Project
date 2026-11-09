@@ -5,14 +5,13 @@ import {
   FaShieldAlt, FaTrophy, FaUsers, FaAward, FaCalendarAlt,
   FaChartLine, FaStar, FaHeart, FaChevronLeft, FaChevronRight
 } from 'react-icons/fa'
-import logo from '/logo3.png'
+import logo from '/logo2.png'
 
 // ============ ABOUT HERO SLIDES ============
 const ABOUT_SLIDES = [
   {
     title: 'Our Story',
-    subtitle: 'Founded in 2020, PunchTrack emerged from a simple yet powerful idea: to bring modern technology to boxing.',
-    bg: 'from-[#e11d48]/30 via-transparent to-[#fbbf24]/20'
+subtitle: 'Founded in 2020, BOXaFIT emerged from a simple yet powerful idea: to bring modern technology to boxing.',    bg: 'from-[#e11d48]/30 via-transparent to-[#fbbf24]/20'
   },
   {
     title: 'Our Mission',
@@ -64,7 +63,7 @@ const About = () => {
   ]
 
   const milestones = [
-    { year: '2020', title: 'Company Founded', description: 'PunchTrack was established with a vision to revolutionize boxing' },
+    { year: '2020', title: 'Company Founded', description: 'BOXaFIT was established with a vision to revolutionize boxing' },
     { year: '2021', title: 'First Tournament', description: 'Successfully hosted first virtual boxing tournament' },
     { year: '2022', title: 'Global Expansion', description: 'Expanded to 15 countries worldwide' },
     { year: '2023', title: '1M+ Users', description: 'Reached over 1 million boxing fans globally' },
@@ -104,9 +103,9 @@ const About = () => {
               exit={{ opacity: 0, y: -30 }}
               transition={{ duration: 0.6 }}
             >
-              <img src={logo} alt="PunchTrack Logo" className="w-24 sm:w-64 mx-auto mb-4" />
+              <img src={logo} alt="BOXaFIT Logo" className="w-24 sm:w-64 mx-auto mb-4" />
               <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-                <span className="gradient-text">About PunchTrack</span>
+                <span className="gradient-text">About BOXaFIT</span>
               </h1>
               <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold mb-3 text-foreground">
                 {currentSlide.title}
@@ -189,7 +188,7 @@ const About = () => {
               </h2>
               <div className="space-y-3 sm:space-y-4 text-muted-foreground text-sm sm:text-base">
                 <p>
-                  Founded in 2020, PunchTrack emerged from a simple yet powerful idea:
+                  Founded in 2020, BOXaFIT emerged from a simple yet powerful idea:
                   to bring modern technology to the world of boxing tournament management.
                 </p>
                 <p>
@@ -198,7 +197,7 @@ const About = () => {
                   decades of boxing expertise with cutting-edge technology.
                 </p>
                 <p>
-                  Today, PunchTrack is trusted by tournament organizers, judges, and boxers
+                  Today, BOXaFIT is trusted by tournament organizers, judges, and boxers
                   worldwide, handling everything from local competitions to international championships.
                 </p>
               </div>
@@ -211,7 +210,7 @@ const About = () => {
               className="bg-gradient-to-br from-[#e11d48]/10 to-[#fbbf24]/10 rounded-2xl p-6 sm:p-8 mx-4 sm:mx-0"
             >
               <div className="flex items-center justify-center mb-6">
-                <img src={logo} alt="PunchTrack Logo" className="w-28 h-20 sm:w-32 sm:h-24" />
+                <img src={logo} alt="BOXaFIT Logo" className="w-28 h-20 sm:w-32 sm:h-24" />
               </div>
               <h3 className="font-display text-xl sm:text-2xl font-bold text-center text-foreground mb-4">
                 Our Mission
@@ -318,7 +317,7 @@ const About = () => {
               Ready to Get Started?
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
-              Join thousands of boxing professionals using PunchTrack to manage their tournaments and careers
+              Join thousands of boxing professionals using BOXaFIT to manage their tournaments and careers
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <button className="px-6 sm:px-8 py-2 sm:py-3 bg-[#e11d48] text-white rounded-lg font-display font-bold hover:scale-105 transition-transform text-sm sm:text-base">
