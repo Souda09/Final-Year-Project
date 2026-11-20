@@ -8,7 +8,7 @@ import {
 import { supabase } from '../lib/supabase'
 import useStore from '../store/useStore'
 import toast from 'react-hot-toast'
-import logo from '/logo2.png'
+import logo from '/logo.png'
 
 const Navbar = () => {
   const user = useStore((s) => s.user)
@@ -174,15 +174,11 @@ const handleFeedbackClick = async (fb, markOnly = false) => {
           <Link to="/" onClick={closeMobile} className="flex items-center gap-1 group">
             <img
     src={logo}
-    alt="BOXaFIT Logo"
+    alt="PunchTrack Logo"
     className="w-auto h-14 md:h-16 object-contain group-hover:scale-110 transition-transform"
   />
   <h1 className="font-black text-xl md:text-2xl tracking-wider uppercase italic">
-  <span className="gradient-text">BOX</span>
-  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-400">
-    a
-  </span>
-  <span className="gradient-text">FIT</span>
+  <span className="gradient-text">PunchTrack</span>
 </h1>
           </Link>
 

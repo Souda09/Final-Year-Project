@@ -11,7 +11,7 @@ import {
 import { supabase } from '../lib/supabase'
 import useStore from '../store/useStore'
 import toast from 'react-hot-toast'
-import logo from '/logo4.png'
+import logo from '/logo.png'
 import logo2 from '/logo2.png'
 
 // ============ HERO SLIDER DATA ============
@@ -33,7 +33,7 @@ const HERO_SLIDES = [
   {
     title: 'Your Boxing Journey',
     subtitle: 'Manage tournaments, track fighters, and build your legacy.',
-    cta: 'Join BOXaFIT',
+    cta: 'Join PunchTrack',
     ctaAction: 'signup',
     bg: 'from-[#e11d48]/20 via-[#fbbf24]/10 to-[#e11d48]/30'
   }
@@ -172,14 +172,10 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <img src={logo2} alt="BOXaFIT" className="w-auto h-28 object-contain" />
+              <img src={logo} alt="PunchTrack" className="w-auto h-28 object-contain" />
              <h3 className="font-display text-xl font-black tracking-wider uppercase italic">
-  <span className="gradient-text">BOX</span>
-  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-400">
-    a
-  </span>
-  <span className="gradient-text">FIT</span>
-</h3>
+  <span className="gradient-text">PunchTrack</span>
+ </h3>
             </div>
 
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -292,7 +288,7 @@ const Footer = () => {
 
         {/* Bottom bar */}
         <div className="mt-10 pt-6 border-t border-gray-300 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-muted-foreground">
-          <p>© {year} BOXaFIT. All rights reserved.</p>
+          <p>© {year} PunchTrack. All rights reserved.</p>
           <p>Made with ❤️ for the boxing community</p>
         </div>
       </div>
@@ -561,8 +557,8 @@ useEffect(() => {
               transition={{ duration: 0.6 }}
             >
 <img
-  src={logo}
-  alt="BOXaFIT"
+  src={logo2}
+  alt="PunchTrack"
   className="w-52 sm:w-64 md:w-72 lg:w-80 h-auto mx-auto mb-5 object-contain"
 />
               <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold mb-3 text-foreground">
@@ -652,15 +648,11 @@ useEffect(() => {
         <div className="container-responsive max-w-3xl text-center">
           <h2 className="font-display text-2xl sm:text-3xl font-bold mb-3">
   <span className="gradient-text">About </span>
-  <span className="gradient-text">BOX</span>
-  <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-gray-200 to-gray-400">
-    a
-  </span>
-  <span className="gradient-text">FIT</span>
+  <span className="gradient-text">PunchTrack</span>
 </h2>
 
               <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-2xl mx-auto px-4">
-  BOXaFIT is a modern boxing tournament management platform built to connect
+  PunchTrack is a modern boxing tournament management platform built to connect
   fighters, officials, and fans. Track live bouts, review completed match history,
   and follow upcoming fixtures — all in one place.
 </p>
